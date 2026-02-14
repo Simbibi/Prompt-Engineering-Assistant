@@ -2,6 +2,7 @@ import bs4
 import sqlite3
 import requests
 from bs4 import BeautifulSoup
+import asyncio
 
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -10,43 +11,56 @@ from langchain_openai import OpenAIEmbeddings
 
 from api import OPENAI_API_KEY, OPENAI_API_BASE
 
-print(sqlite3.sqlite_version)
 
-url = "https://lilianweng.github.io/posts/2023-03-15-prompt-engineering/"
-html_doc = requests.get(url).text
-soup = BeautifulSoup(html_doc, "html.parser")
-print(soup.prettify()[:1000])
+def build_index():
+    """Build and persist the vector index (synchronous).
 
-bs4_strainer = bs4.SoupStrainer(
-    class_=("post-title", "post-header", "post-content")
-)
+    This is kept as a synchronous function because many used libraries are
+    synchronous (requests, sqlite3, langchain sync clients). Importing this
+    module will not run the blocking code; run it as a script or call
+    `asyncio.to_thread(build_index)` from async code.
+    """
+    print(sqlite3.sqlite_version)
 
-loader = WebBaseLoader(
-    web_paths=(url,),
-    bs_kwargs={"parse_only": bs4_strainer},
-)
+    url = "https://lilianweng.github.io/posts/2023-03-15-prompt-engineering/"
+    html_doc = requests.get(url).text
+    soup = BeautifulSoup(html_doc, "html.parser")
+    print(soup.prettify()[:1000])
 
-docs = loader.load()
+    bs4_strainer = bs4.SoupStrainer(
+        class_=("post-title", "post-header", "post-content")
+    )
 
-text_splitter = RecursiveCharacterTextSplitter(
-    chunk_size=1000,
-    chunk_overlap=200,
-    add_start_index=True,
-)
+    loader = WebBaseLoader(
+        web_paths=(url,),
+        bs_kwargs={"parse_only": bs4_strainer},
+    )
 
-all_splits = text_splitter.split_documents(docs)
+    docs = loader.load()
 
-embeddings = OpenAIEmbeddings(
-    model="text-embedding-3-small",
-    openai_api_key=OPENAI_API_KEY,
-    openai_api_base=OPENAI_API_BASE,
-)
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=1000,
+        chunk_overlap=200,
+        add_start_index=True,
+    )
 
-vector_store = Chroma(
-    collection_name="prompt_engineering",
-    embedding_function=embeddings,
-    persist_directory="./chroma_db",
-)
+    all_splits = text_splitter.split_documents(docs)
 
-ids = vector_store.add_documents(all_splits)
-print("Documents added:", len(ids))
+    embeddings = OpenAIEmbeddings(
+        model="text-embedding-3-small",
+        openai_api_key=OPENAI_API_KEY,
+        openai_api_base=OPENAI_API_BASE,
+    )
+
+    vector_store = Chroma(
+        collection_name="prompt_engineering",
+        embedding_function=embeddings,
+        persist_directory="./chroma_db",
+    )
+
+    ids = vector_store.add_documents(all_splits)
+    print("Documents added:", len(ids))
+
+
+if __name__ == "__main__":
+    build_index()

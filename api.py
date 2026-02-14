@@ -1,3 +1,9 @@
-# api.py
-OPENAI_API_KEY = "pza_tCgEhNhF-LpPGmcl9428sem2iN6d-AAA"
-OPENAI_API_BASE = "https://api.polza.ai/v1"
+# api.py — exposes variables used across the project
+from settings import get_settings
+
+settings = get_settings()
+
+# Prefer `api_key` but fall back to `llm_vender_secret` if needed
+OPENAI_API_KEY = settings.api_key or settings.llm_vender_secret
+OPENAI_API_BASE = settings.llm_base_url
+

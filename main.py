@@ -5,5 +5,5 @@ app = FastAPI()
 
 @app.get("/ask")
 async def ask(question: str):
-    answer = generate_answer(question)
+    answer = await generate_answer(question)
     return {"answer": answer}
