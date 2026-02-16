@@ -11,8 +11,8 @@ BASE_DIR = Path(__file__).parent
 
 class Settings(BaseSettings):
     # secrets
-    api_key: Optional[SecretStr] = Field(None, env="API_KEY")
-    llm_vender_secret: Optional[SecretStr] = Field(None, env="LLM_VENDER_SECRET")
+    openai_api_key: Optional[SecretStr] = Field(None, env="OPENAI_API_KEY")
+    openai_api_url: Optional[SecretStr] = Field(None, env="OPENAI_API_URL")
 
     # app
     port: int = Field(8000, ge=1, le=65535)
@@ -21,16 +21,12 @@ class Settings(BaseSettings):
     )
 
     # db
-    db_schema: Optional[str] = Field(None, env="DB_SCHEMA")
-    db_url: Optional[AnyUrl] = Field(None, env="DATABASE_URL")
-
-    # llm
-    llm_base_url: AnyUrl = Field("https://openrouter.ai/v1", env="LLM_BASE_URL")
-    llm_model: str = Field("google/gemini-2.0-flash-001", env="LLM_MODEL")
+    chroma_db_dir: Path = Field("chroma_db", env="CHROMA_DB_DIR")
 
     class Config:
         env_file = BASE_DIR / ".env"
         extra = "ignore"
+        case_sensitive = False
 
 
 @lru_cache()

@@ -9,8 +9,8 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
 from langchain_openai import OpenAIEmbeddings
 
-from api import OPENAI_API_KEY, OPENAI_API_BASE
-
+from settings import get_settings
+settings = get_settings()
 
 def build_index():
     """Build and persist the vector index (synchronous).
@@ -47,15 +47,16 @@ def build_index():
     all_splits = text_splitter.split_documents(docs)
 
     embeddings = OpenAIEmbeddings(
-        model="text-embedding-3-small",
-        openai_api_key=OPENAI_API_KEY,
-        openai_api_base=OPENAI_API_BASE,
+    model="text-embedding-3-small",
+    openai_api_key=settings.openai_api_key,
+    openai_api_base=settings.openai_api_url,
     )
+
 
     vector_store = Chroma(
         collection_name="prompt_engineering",
         embedding_function=embeddings,
-        persist_directory="./chroma_db",
+        persist_directory=str(settings.chroma_db_dir),
     )
 
     ids = vector_store.add_documents(all_splits)
