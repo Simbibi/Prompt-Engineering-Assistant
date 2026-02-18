@@ -48,8 +48,8 @@ def build_index():
 
     embeddings = OpenAIEmbeddings(
     model="text-embedding-3-small",
-    openai_api_key=settings.openai_api_key,
-    openai_api_base=settings.openai_api_url,
+    openai_api_key=settings.openai_api_key.get_secret_value() if settings.openai_api_key else None,
+    openai_api_base=settings.openai_api_url.get_secret_value() if settings.openai_api_url else None,
     )
 
 

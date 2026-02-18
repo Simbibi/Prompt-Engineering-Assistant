@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     )
 
     # db
-    chroma_db_dir: Path = Field("chroma_db", env="CHROMA_DB_DIR")
+    chroma_db_dir: Path = Field(BASE_DIR / "chroma_db", env="CHROMA_DB_DIR")
 
     class Config:
         env_file = BASE_DIR / ".env"
