@@ -62,10 +62,11 @@ async def generate_answer(question: str) -> str:
 
         docs_content = "\n".join(doc.page_content for doc in retrieved_docs)
 
-        message = prompt.invoke({
-            "question": question,
-            "context": docs_content,
-        })
+        # prompt.invoke — блокирующий
+        message = await asyncio.to_thread(
+            prompt.invoke,
+            {"question": question, "context": docs_content},
+        )
 
         # llm.invoke — блокирующий
         response = await asyncio.to_thread(

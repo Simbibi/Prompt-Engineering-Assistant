@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG - Prompt Engineering Assistant</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .container { background: white; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-width: 700px; width: 100%; padding: 50px 40px; animation: slideIn 0.6s ease-out; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(20px);} to { opacity: 1; transform: translateY(0);} }
+        .header { text-align: center; margin-bottom: 40px; }
+        .logo { width: 60px; height: 60px; margin: 0 auto 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 32px; color: white; font-weight: bold; }
+        h1 { color: #333; font-size: 28px; margin-bottom: 10px; }
+        .subtitle { color: #666; font-size: 16px; line-height: 1.5; }
+        .form-group { margin-bottom: 25px; }
+        label { display: block; color: #333; font-weight: 600; margin-bottom: 12px; font-size: 15px; }
+        .input-wrapper { position: relative; display: flex; gap: 10px; }
+        input[type="text"] { flex: 1; padding: 14px 18px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 15px; transition: all 0.3s ease; }
+        input[type="text"]:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,0.1); }
+        button { padding: 14px 28px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; display:flex; align-items:center; gap:8px; }
+        button:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(102,126,234,0.4); }
+        button:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .spinner { width: 18px; height: 18px; border: 3px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite; display: none; }
+        button:disabled .spinner { display: inline-block; }
+        button:disabled .button-text { display: none; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .response-section { display: none; margin-top: 30px; padding-top: 30px; border-top: 2px solid #e0e0e0; }
+        .response-section.show { display: block; animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px);} to { opacity: 1; transform: translateY(0);} }
+        .response-label { color: #333; font-weight: 600; margin-bottom: 12px; font-size: 15px; }
+        .response-box { background: #f5f7fa; border-left: 4px solid #667eea; padding: 18px; border-radius: 8px; color: #333; line-height: 1.6; font-size: 15px; }
+        .error-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 18px; border-radius: 8px; color: #856404; line-height: 1.6; font-size: 15px; }
+        .loading-box { background: #e3f2fd; border-left: 4px solid #2196f3; padding: 18px; border-radius: 8px; color: #1565c0; line-height: 1.6; font-size: 15px; display:flex; align-items:center; gap:12px; }
+        .loading-spinner { width: 20px; height: 20px; border: 3px solid rgba(33,150,243,0.3); border-top-color: #2196f3; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        .footer { text-align:center; margin-top:30px; color:#999; font-size:13px; }
+        @media (max-width:600px) { .container { padding:30px 20px; } h1 { font-size:24px; } .input-wrapper { flex-direction: column; } button { width:100%; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">⚡</div>
+            <h1>RAG Assistant</h1>
+            <p class="subtitle">Ask a question about prompt engineering</p>
+        </div>
+
+        <div class="form-group">
+            <label for="question">Your Question</label>
+            <div class="input-wrapper">
+                <input type="text" id="question" placeholder="e.g., What is the best way to write an effective prompt?" autocomplete="off">
+                <button id="askBtn" onclick="askQuestion()">
+                    <span class="spinner"></span>
+                    <span class="button-text">Ask</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="response-section" id="responseSection">
+            <div class="response-label">Answer</div>
+            <div id="responseContent"></div>
+        </div>
+
+        <div class="footer">
+            <p>Powered by RAG • Prompt Engineering Knowledge Base</p>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000';
+        const questionInput = document.getElementById('question');
+        const askBtn = document.getElementById('askBtn');
+        const responseSection = document.getElementById('responseSection');
+        const responseContent = document.getElementById('responseContent');
+
+        questionInput.addEventListener('keypress', (e) => { if (e.key === 'Enter' && !askBtn.disabled) askQuestion(); });
+
+        async function askQuestion() {
+            const question = questionInput.value.trim();
+            if (!question) { alert('Please enter a question'); return; }
+            askBtn.disabled = true;
+            responseSection.classList.add('show');
+            responseContent.innerHTML = `<div class="loading-box"><div class="loading-spinner"></div><span>Searching for an answer...</span></div>`;
+            try {
+                const response = await fetch(`${API_URL}/ask?question=${encodeURIComponent(question)}`);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const data = await response.json();
+                if (data.error) responseContent.innerHTML = `<div class="error-box">${escapeHtml(data.error)}</div>`;
+                else responseContent.innerHTML = `<div class="response-box">${escapeHtml(data.answer)}</div>`;
+            } catch (error) {
+                console.error('Error:', error);
+                responseContent.innerHTML = `<div class="error-box"><strong>Error:</strong> Unable to connect to the server. Make sure the RAG server is running on ${API_URL}</div>`;
+            } finally { askBtn.disabled = false; }
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const map = {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#039;"};
+            return String(text).replace(/[&<>"']/g, m => map[m]);
+        }
+    </script>
+</body>
+</html>
