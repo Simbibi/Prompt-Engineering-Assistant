@@ -21,7 +21,7 @@ def build_index():
     `asyncio.to_thread(build_index)` from async code.
     """
     print(sqlite3.sqlite_version)
-
+    #url = 'https://ru.wikipedia.org/wiki/Тяжёлые_металлы'
     url = "https://lilianweng.github.io/posts/2023-03-15-prompt-engineering/"
     html_doc = requests.get(url).text
     soup = BeautifulSoup(html_doc, "html.parser")
@@ -30,14 +30,14 @@ def build_index():
     bs4_strainer = bs4.SoupStrainer(
         class_=("post-title", "post-header", "post-content")
     )
-
+    
     loader = WebBaseLoader(
         web_paths=(url,),
         bs_kwargs={"parse_only": bs4_strainer},
     )
 
     docs = loader.load()
-
+    print(len(docs))
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=1000,
         chunk_overlap=200,
@@ -45,7 +45,12 @@ def build_index():
     )
 
     all_splits = text_splitter.split_documents(docs)
-
+    print("Number of chunks:", len(all_splits))
+    '''for idx, chunk in enumerate(all_splits, 1):
+        print(f"--- Chunk {idx} ---")
+        print(chunk.page_content)
+        print("\n")'''
+    
     embeddings = OpenAIEmbeddings(
     model="text-embedding-3-small",
     openai_api_key=settings.openai_api_key.get_secret_value() if settings.openai_api_key else None,
