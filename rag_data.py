@@ -46,10 +46,10 @@ def build_index():
 
     all_splits = text_splitter.split_documents(docs)
     print("Number of chunks:", len(all_splits))
-    '''for idx, chunk in enumerate(all_splits, 1):
+    for idx, chunk in enumerate(all_splits, 1):
         print(f"--- Chunk {idx} ---")
         print(chunk.page_content)
-        print("\n")'''
+        print("\n")
     
     embeddings = OpenAIEmbeddings(
     model="text-embedding-3-small",
