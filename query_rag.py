@@ -1,11 +1,11 @@
 import asyncio
 import logging
-import re  # 🔥 NEW
+import re  
 
-from rank_bm25 import BM25Okapi  # 🔥 NEW
+from rank_bm25 import BM25Okapi  
 
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.documents import Document  # 🔥 NEW
+from langchain_core.documents import Document 
 from langchain_chroma import Chroma
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from settings import get_settings
@@ -165,7 +165,7 @@ async def generate_answer(question: str) -> str:
 
         answer = await asyncio.to_thread(llm.invoke, message)
 
-        return answer
+        return answer.content
 
     except Exception:
         logger.exception("Ошибка генерации ответа")
