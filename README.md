@@ -23,7 +23,7 @@ pip install -r requirements.txt
 3. Run the app or scripts as required (example):
 
 ```bash
-python main.py
+uvicorn main:app --reload
 # or use your preferred entrypoint
 ```
 
