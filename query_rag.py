@@ -27,32 +27,26 @@ vector_store = Chroma(
     persist_directory=str(settings.chroma_db_dir),
 )
 
-# =========================================================
-# 🔥 NEW: ЗАГРУЖАЕМ ВСЕ ДОКУМЕНТЫ И СТРОИМ BM25
-# =========================================================
+all_data = vector_store.get()  
+all_texts = all_data["documents"]  
+all_metadatas = all_data["metadatas"]  
 
-all_data = vector_store.get()  # 🔥 NEW
-all_texts = all_data["documents"]  # 🔥 NEW
-all_metadatas = all_data["metadatas"]  # 🔥 NEW
-
-all_docs = [  # 🔥 NEW
+all_docs = [ 
     Document(page_content=text, metadata=meta)
     for text, meta in zip(all_texts, all_metadatas)
 ]
 
-logger.info(f"Загружено {len(all_docs)} документов из Chroma")  # 🔥 NEW
+logger.info(f"Загружено {len(all_docs)} документов из Chroma") 
 
 
-def tokenize(text):  # 🔥 NEW
+def tokenize(text): 
     return re.findall(r"\w+", text.lower())
 
 
-tokenized_corpus = [tokenize(doc.page_content) for doc in all_docs]  # 🔥 NEW
-bm25 = BM25Okapi(tokenized_corpus)  # 🔥 NEW
+tokenized_corpus = [tokenize(doc.page_content) for doc in all_docs] 
+bm25 = BM25Okapi(tokenized_corpus)  
 
-logger.info("BM25 инициализирован успешно")  # 🔥 NEW
-
-# =========================================================
+logger.info("BM25 инициализирован успешно") 
 
 prompt = ChatPromptTemplate.from_template(
     """You are a helpful assistant that answers questions about the blog post on prompt engineering.
@@ -72,10 +66,6 @@ llm = ChatOpenAI(
 )
 
 
-# =========================================================
-# RRF
-# =========================================================
-
 def rrf_fusion(rank_lists, k: int = 60):
     scores = {}
 
@@ -86,10 +76,6 @@ def rrf_fusion(rank_lists, k: int = 60):
 
     return sorted(scores.items(), key=lambda x: x[1], reverse=True)
 
-
-# =========================================================
-# 🔥 NEW: НОРМАЛЬНЫЙ BM25 SEARCH
-# =========================================================
 
 async def bm25_search(question: str, top_k: int = 10):  # 🔥 NEW
     tokenized_query = tokenize(question)
@@ -106,11 +92,6 @@ async def bm25_search(question: str, top_k: int = 10):  # 🔥 NEW
     )[:top_k]
 
     return [all_docs[i] for i in top_indices]
-
-
-# =========================================================
-# GENERATE ANSWER
-# =========================================================
 
 async def generate_answer(question: str) -> str:
     try:
@@ -140,7 +121,7 @@ async def generate_answer(question: str) -> str:
         # --- Берём top-3 после fusion ---
         top_chunk_ids = [chunk_id for chunk_id, _ in fused[:3]]
 
-        # 🔄 UPDATED: безопасный mapping через all_docs
+        # UPDATED: безопасный mapping через all_docs
         id_to_doc = {
             doc.metadata["chunk_id"]: doc
             for doc in all_docs
