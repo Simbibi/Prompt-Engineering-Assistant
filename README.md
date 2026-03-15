@@ -1,4 +1,4 @@
-# rag_first
+# RAG Assistant
 
 This repository contains a small Retrieval-Augmented Generation (RAG) demo.
 
